@@ -1,0 +1,81 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AR Motion AI",
+        "description": "Take camera snapshots when motion is detected, describe them with an AI Task entity and push the result to your phones.",
+        "data": {
+          "name": "Name",
+          "camera": "Camera",
+          "motion_sensors": "Motion sensor(s)",
+          "ai_task_entity": "AI Task entity",
+          "notify_services": "Notify services",
+          "num_snapshots": "Number of snapshots",
+          "snapshot_interval_ms": "Delay between snapshots",
+          "cooldown_seconds": "Cooldown between runs",
+          "notify_on_no_motion": "Notify even when the AI sees nothing",
+          "prompt": "AI prompt"
+        },
+        "data_description": {
+          "notify_services": "Pick mobile_app_* services (works for Android and iOS). Leave empty to only update entities/events.",
+          "prompt": "Jinja is supported. Variables: camera_name, trigger. Keep the 'no obvious motion' phrase so empty results can be filtered.",
+          "cooldown_seconds": "Motion triggers inside this window are ignored."
+        }
+      }
+    },
+    "error": {
+      "no_sensors": "Select at least one motion sensor."
+    },
+    "abort": {
+      "already_configured": "This camera is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AR Motion AI options",
+        "data": {
+          "camera": "Camera",
+          "motion_sensors": "Motion sensor(s)",
+          "ai_task_entity": "AI Task entity",
+          "notify_services": "Notify services",
+          "num_snapshots": "Number of snapshots",
+          "snapshot_interval_ms": "Delay between snapshots",
+          "cooldown_seconds": "Cooldown between runs",
+          "notify_on_no_motion": "Notify even when the AI sees nothing",
+          "prompt": "AI prompt"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_description": { "name": "Last description" },
+      "last_run": { "name": "Last analysis" }
+    },
+    "binary_sensor": {
+      "analyzing": { "name": "Analyzing" }
+    },
+    "switch": {
+      "enabled": { "name": "Motion analysis" }
+    },
+    "button": {
+      "analyze_now": { "name": "Analyze now" }
+    },
+    "image": {
+      "latest_snapshot": { "name": "Latest snapshot" }
+    }
+  },
+  "services": {
+    "analyze": {
+      "name": "Analyze",
+      "description": "Run snapshot + AI analysis now for one AR Motion AI entry.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Entry",
+          "description": "The AR Motion AI entry to run."
+        }
+      }
+    }
+  }
+}
