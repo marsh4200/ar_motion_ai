@@ -3,28 +3,54 @@
     "step": {
       "user": {
         "title": "AR Motion AI",
-        "description": "Take camera snapshots when motion is detected, describe them with an AI Task entity and push the result to your phones.",
+        "description": "Take camera snapshots when motion is detected, have an AI describe them and push the result to your phones. Next step: connect the AI provider.",
         "data": {
           "name": "Name",
           "camera": "Camera",
           "motion_sensors": "Motion sensor(s)",
-          "ai_task_entity": "AI Task entity",
           "notify_services": "Notify services",
           "num_snapshots": "Number of snapshots",
           "snapshot_interval_ms": "Delay between snapshots",
           "cooldown_seconds": "Cooldown between runs",
           "notify_on_no_motion": "Notify even when the AI sees nothing",
-          "prompt": "AI prompt"
+          "prompt": "AI prompt",
+          "provider": "AI provider"
         },
         "data_description": {
           "notify_services": "Pick mobile_app_* services (works for Android and iOS). Leave empty to only update entities/events.",
           "prompt": "Jinja is supported. Variables: camera_name, trigger. Keep the 'no obvious motion' phrase so empty results can be filtered.",
-          "cooldown_seconds": "Motion triggers inside this window are ignored."
+          "cooldown_seconds": "Motion triggers inside this window are ignored.",
+          "provider": "Gemini has a free tier. OpenAI and Claude need credit on their account. Ollama is free and runs locally. 'Home Assistant AI Task' uses an AI integration you already set up in HA."
+        }
+      },
+      "ai": {
+        "title": "Connect the AI",
+        "description": "{error_detail}",
+        "data": {
+          "api_key": "API key",
+          "base_url": "Server URL",
+          "ai_task_entity": "AI Task entity"
+        },
+        "data_description": {
+          "api_key": "Gemini: aistudio.google.com/apikey · OpenAI: platform.openai.com/api-keys · Claude: console.anthropic.com",
+          "base_url": "Ollama: http://<host>:11434 · OpenAI-compatible: base URL ending in /v1 (e.g. https://openrouter.ai/api/v1)"
+        }
+      },
+      "model": {
+        "title": "Choose a model",
+        "description": "Found {count} models on your account. The pre-selected one is a cheap, fast vision model. You can also type a model name.",
+        "data": {
+          "model": "Model"
         }
       }
     },
     "error": {
-      "no_sensors": "Select at least one motion sensor."
+      "no_sensors": "Select at least one motion sensor.",
+      "invalid_auth": "API key rejected. Check the key and try again.",
+      "cannot_connect": "Could not reach the AI server. Check the URL and your network.",
+      "no_credit": "This account has no credit. Add billing on the provider's site, or choose another provider (Gemini has a free tier).",
+      "rate_limited": "Rate limited / free quota used up. Wait a bit and try again.",
+      "unknown": "Unexpected error, see details above."
     },
     "abort": {
       "already_configured": "This camera is already configured."
@@ -37,33 +63,79 @@
         "data": {
           "camera": "Camera",
           "motion_sensors": "Motion sensor(s)",
-          "ai_task_entity": "AI Task entity",
           "notify_services": "Notify services",
           "num_snapshots": "Number of snapshots",
           "snapshot_interval_ms": "Delay between snapshots",
           "cooldown_seconds": "Cooldown between runs",
           "notify_on_no_motion": "Notify even when the AI sees nothing",
-          "prompt": "AI prompt"
+          "prompt": "AI prompt",
+          "provider": "AI provider"
+        },
+        "data_description": {
+          "notify_services": "Pick mobile_app_* services (works for Android and iOS). Leave empty to only update entities/events.",
+          "prompt": "Jinja is supported. Variables: camera_name, trigger. Keep the 'no obvious motion' phrase so empty results can be filtered.",
+          "cooldown_seconds": "Motion triggers inside this window are ignored.",
+          "provider": "Gemini has a free tier. OpenAI and Claude need credit on their account. Ollama is free and runs locally. 'Home Assistant AI Task' uses an AI integration you already set up in HA."
+        }
+      },
+      "ai": {
+        "title": "Connect the AI",
+        "description": "{error_detail}",
+        "data": {
+          "api_key": "API key",
+          "base_url": "Server URL",
+          "ai_task_entity": "AI Task entity"
+        },
+        "data_description": {
+          "api_key": "Gemini: aistudio.google.com/apikey · OpenAI: platform.openai.com/api-keys · Claude: console.anthropic.com",
+          "base_url": "Ollama: http://<host>:11434 · OpenAI-compatible: base URL ending in /v1 (e.g. https://openrouter.ai/api/v1)"
+        }
+      },
+      "model": {
+        "title": "Choose a model",
+        "description": "Found {count} models on your account. The pre-selected one is a cheap, fast vision model. You can also type a model name.",
+        "data": {
+          "model": "Model"
         }
       }
+    },
+    "error": {
+      "no_sensors": "Select at least one motion sensor.",
+      "invalid_auth": "API key rejected. Check the key and try again.",
+      "cannot_connect": "Could not reach the AI server. Check the URL and your network.",
+      "no_credit": "This account has no credit. Add billing on the provider's site, or choose another provider (Gemini has a free tier).",
+      "rate_limited": "Rate limited / free quota used up. Wait a bit and try again.",
+      "unknown": "Unexpected error, see details above."
     }
   },
   "entity": {
     "sensor": {
-      "last_description": { "name": "Last description" },
-      "last_run": { "name": "Last analysis" }
+      "last_description": {
+        "name": "Last description"
+      },
+      "last_run": {
+        "name": "Last analysis"
+      }
     },
     "binary_sensor": {
-      "analyzing": { "name": "Analyzing" }
+      "analyzing": {
+        "name": "Analyzing"
+      }
     },
     "switch": {
-      "enabled": { "name": "Motion analysis" }
+      "enabled": {
+        "name": "Motion analysis"
+      }
     },
     "button": {
-      "analyze_now": { "name": "Analyze now" }
+      "analyze_now": {
+        "name": "Analyze now"
+      }
     },
     "image": {
-      "latest_snapshot": { "name": "Latest snapshot" }
+      "latest_snapshot": {
+        "name": "Latest snapshot"
+      }
     }
   },
   "services": {
@@ -75,6 +147,18 @@
           "name": "Entry",
           "description": "The AR Motion AI entry to run."
         }
+      }
+    }
+  },
+  "selector": {
+    "provider": {
+      "options": {
+        "gemini": "Google Gemini (free tier available)",
+        "openai": "OpenAI (ChatGPT)",
+        "anthropic": "Anthropic Claude",
+        "ollama": "Ollama (local, free)",
+        "openai_compatible": "OpenAI-compatible (OpenRouter, LM Studio, Groq…)",
+        "ai_task": "Home Assistant AI Task entity"
       }
     }
   }

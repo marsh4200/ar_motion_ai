@@ -22,7 +22,13 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_AI_TASK,
+    CONF_API_KEY,
+    CONF_BASE_URL,
     CONF_CAMERA,
+    CONF_MODEL,
+    CONF_PROVIDER,
+    DEFAULT_MODELS,
+    PROVIDER_AI_TASK,
     CONF_COOLDOWN,
     CONF_INTERVAL,
     CONF_MOTION_SENSORS,
@@ -43,6 +49,7 @@ from .const import (
     NO_MOTION_MATCH,
     signal_update,
 )
+from .providers import async_analyze
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -187,12 +194,14 @@ class MotionAIRunner:
         stamp = dt_util.now().strftime("%Y%m%d_%H%M%S")
         await self.hass.async_add_executor_job(os.makedirs, self.media_dir, 0o755, True)
         files: list[str] = []
+        images: list[bytes] = []
         for i in range(1, count + 1):
             image = await async_get_image(self.hass, camera, timeout=10)
             fname = f"{stamp}_{i}.jpg"
             path = os.path.join(self.media_dir, fname)
             await self.hass.async_add_executor_job(_write_bytes, path, image.content)
             files.append(fname)
+            images.append(image.content)
             if i < count and interval:
                 await asyncio.sleep(interval)
 
@@ -205,31 +214,45 @@ class MotionAIRunner:
 
         media_ids = [self._media_id(f) for f in files]
 
-        # 2. AI task
+        # 2. AI
         prompt = Template(cfg.get(CONF_PROMPT) or DEFAULT_PROMPT, self.hass)
         instructions = prompt.async_render(
             {"camera_name": camera_name, "trigger": trigger}, parse_result=False
         )
-        try:
-            response = await self.hass.services.async_call(
-                "ai_task",
-                "generate_data",
-                {
-                    "entity_id": cfg[CONF_AI_TASK],
-                    "task_name": f"{DOMAIN}_{slugify(self.name)}",
-                    "instructions": instructions,
-                    "attachments": [
-                        {"media_content_id": m, "media_content_type": "image/jpeg"}
-                        for m in media_ids
-                    ],
-                },
-                blocking=True,
-                return_response=True,
+        # Entries created before v1.1 had no provider and used an AI Task entity
+        provider = cfg.get(CONF_PROVIDER) or PROVIDER_AI_TASK
+        if provider == PROVIDER_AI_TASK:
+            try:
+                response = await self.hass.services.async_call(
+                    "ai_task",
+                    "generate_data",
+                    {
+                        "entity_id": cfg[CONF_AI_TASK],
+                        "task_name": f"{DOMAIN}_{slugify(self.name)}",
+                        "instructions": instructions,
+                        "attachments": [
+                            {"media_content_id": m, "media_content_type": "image/jpeg"}
+                            for m in media_ids
+                        ],
+                    },
+                    blocking=True,
+                    return_response=True,
+                )
+            except HomeAssistantError as err:
+                raise HomeAssistantError(f"AI task failed: {err}") from err
+            raw = (response or {}).get("data", "")
+        else:
+            raw = await async_analyze(
+                self.hass,
+                provider,
+                api_key=cfg.get(CONF_API_KEY),
+                base_url=cfg.get(CONF_BASE_URL),
+                model=cfg.get(CONF_MODEL) or DEFAULT_MODELS.get(provider, ""),
+                prompt=instructions,
+                images=images,
             )
-        except HomeAssistantError as err:
-            raise HomeAssistantError(f"AI task failed: {err}") from err
 
-        text = str((response or {}).get("data", "")).strip() or "No response from AI"
+        text = str(raw or "").strip() or "No response from AI"
         no_motion = NO_MOTION_MATCH in text.lower()
 
         result = RunResult(

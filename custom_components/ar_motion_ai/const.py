@@ -13,6 +13,36 @@ CONF_NUM_SNAPSHOTS = "num_snapshots"
 CONF_INTERVAL = "snapshot_interval_ms"
 CONF_COOLDOWN = "cooldown_seconds"
 CONF_NOTIFY_NO_MOTION = "notify_on_no_motion"
+CONF_PROVIDER = "provider"
+CONF_API_KEY = "api_key"
+CONF_BASE_URL = "base_url"
+CONF_MODEL = "model"
+
+PROVIDER_GEMINI = "gemini"
+PROVIDER_OPENAI = "openai"
+PROVIDER_ANTHROPIC = "anthropic"
+PROVIDER_OLLAMA = "ollama"
+PROVIDER_COMPATIBLE = "openai_compatible"
+PROVIDER_AI_TASK = "ai_task"
+PROVIDERS = [
+    PROVIDER_GEMINI,
+    PROVIDER_OPENAI,
+    PROVIDER_ANTHROPIC,
+    PROVIDER_OLLAMA,
+    PROVIDER_COMPATIBLE,
+    PROVIDER_AI_TASK,
+]
+DEFAULT_PROVIDER = PROVIDER_GEMINI
+
+# Pre-selected model per provider (user can pick any model the account has)
+DEFAULT_MODELS = {
+    PROVIDER_GEMINI: "gemini-2.5-flash",
+    PROVIDER_OPENAI: "gpt-4o-mini",
+    PROVIDER_ANTHROPIC: "claude-haiku-4-5",
+    PROVIDER_OLLAMA: "qwen2.5vl",
+    PROVIDER_COMPATIBLE: "",
+}
+DEFAULT_OLLAMA_URL = "http://localhost:11434"
 
 DEFAULT_NUM_SNAPSHOTS = 3
 DEFAULT_INTERVAL = 500

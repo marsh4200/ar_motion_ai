@@ -38,6 +38,8 @@ class LastDescriptionSensor(MotionAIEntity, SensorEntity):
             "notified": r.notified,
             "snapshots": r.media_ids,
             "error": r.error,
+            "provider": self.runner.cfg.get("provider") or "ai_task",
+            "model": self.runner.cfg.get("model"),
         }
 
 

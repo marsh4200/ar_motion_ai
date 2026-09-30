@@ -8,7 +8,21 @@ On motion it grabs a burst of snapshots from a camera, sends them to any **AI Ta
 HACS → Custom repositories → `https://github.com/marsh4200/ar_motion_ai` (Integration), install, restart.
 Then **Settings → Devices & Services → Add Integration → AR Motion AI**. Add one entry per camera.
 
-Requires Home Assistant 2025.8+ and an AI Task entity configured.
+Requires Home Assistant 2025.8+.
+
+## AI provider (set up inside the integration)
+Setup has 3 steps: camera & sensors → AI provider + API key (checked live) → model (listed from your account).
+
+| Provider | Cost | Key / URL |
+|---|---|---|
+| Google Gemini | Free tier available | aistudio.google.com/apikey |
+| OpenAI | Needs account credit | platform.openai.com/api-keys |
+| Anthropic Claude | Needs account credit | console.anthropic.com |
+| Ollama | Free, runs locally | `http://<host>:11434` |
+| OpenAI-compatible | Depends (OpenRouter, LM Studio, Groq…) | base URL ending in `/v1` |
+| HA AI Task entity | Whatever that integration uses | pick the entity |
+
+Change provider, key or model anytime via **Configure** on the integration.
 
 ## Per-camera entities
 | Entity | Purpose |
