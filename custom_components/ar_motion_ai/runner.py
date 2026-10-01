@@ -6,11 +6,10 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.camera import async_get_image
-from homeassistant.components.http.auth import async_sign_path
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON
 from homeassistant.core import Event, HomeAssistant, callback
@@ -50,6 +49,7 @@ from .const import (
     NO_MOTION_MATCH,
     signal_update,
 )
+from .snapshot_view import snapshot_link
 from .providers import async_analyze
 
 _LOGGER = logging.getLogger(__name__)
@@ -275,12 +275,9 @@ class MotionAIRunner:
         if isinstance(services, str):
             services = [services]
         image_url = self._media_url(first_file)
-        # Tapping the notification opens the URL outside the app's
-        # authenticated session (browser / gallery), so /media/... returns 401
-        # unless the path carries an authSig. Sign it with HA's content user.
-        click_url = async_sign_path(
-            self.hass, image_url, timedelta(days=7), use_content_user=True
-        )
+        # Tap target: opens outside the app's logged-in session, so use a
+        # tokenised link that doesn't need HA auth (see snapshot_view.py).
+        click_url = snapshot_link(self.hass, slugify(self.name), first_file)
         sent = False
         for svc in services:
             svc = svc.removeprefix("notify.")

@@ -11,6 +11,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 from .runner import MotionAIRunner
+from .snapshot_view import async_setup_snapshot_links
 
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SWITCH, Platform.BUTTON, Platform.IMAGE]
 
@@ -21,7 +22,8 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Register the domain-level analyze service."""
+    """Register the domain-level analyze service and snapshot link view."""
+    await async_setup_snapshot_links(hass)
 
     async def _analyze(call: ServiceCall):
         entry_id = call.data[ATTR_ENTRY_ID]
