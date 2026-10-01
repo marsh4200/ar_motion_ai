@@ -49,7 +49,7 @@ from .const import (
     NO_MOTION_MATCH,
     signal_update,
 )
-from .snapshot_view import snapshot_link
+from .events import DATA_EVENTS, panel_link
 from .providers import async_analyze
 
 _LOGGER = logging.getLogger(__name__)
@@ -265,19 +265,40 @@ class MotionAIRunner:
             no_motion=no_motion,
         )
 
-        # 3. Notify
+        # 3. Record for the in-app Motion AI panel
+        folder = slugify(self.name)
+        event = {
+            "id": f"{folder}-{stamp}",
+            "entry_id": self.entry.entry_id,
+            "name": self.name,
+            "camera_name": camera_name,
+            "trigger": trigger,
+            "text": text,
+            "timestamp": result.timestamp.isoformat(),
+            "folder": folder,
+            "files": files,
+            "no_motion": no_motion,
+            "notified": False,
+        }
+        if (log := self.hass.data.get(DATA_EVENTS)) is not None:
+            log.async_add(event)
+
+        # 4. Notify
         if not no_motion or cfg.get(CONF_NOTIFY_NO_MOTION, DEFAULT_NOTIFY_NO_MOTION):
-            result.notified = await self._notify(trigger, text, files[0])
+            result.notified = await self._notify(trigger, text, files[0], event["id"])
+            event["notified"] = result.notified
         return result
 
-    async def _notify(self, trigger: str, text: str, first_file: str) -> bool:
+    async def _notify(
+        self, trigger: str, text: str, first_file: str, event_id: str
+    ) -> bool:
         services = self.cfg.get(CONF_NOTIFY) or []
         if isinstance(services, str):
             services = [services]
         image_url = self._media_url(first_file)
-        # Tap target: opens outside the app's logged-in session, so use a
-        # tokenised link that doesn't need HA auth (see snapshot_view.py).
-        click_url = snapshot_link(self.hass, slugify(self.name), first_file)
+        # Tap target: the Motion AI panel inside the companion app — uses the
+        # app's own (internal/external) URL and login, shows image + message.
+        click_url = panel_link(event_id)
         sent = False
         for svc in services:
             svc = svc.removeprefix("notify.")
